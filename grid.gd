@@ -2,16 +2,17 @@ extends Node2D
 
 # Preload the scene or texture you want to spawn
 @onready var element_scene = preload("res://element.tscn")
+@onready var particle_scene = preload("res://ParticleEffect.tscn")
 
-var n_rows = 14
-var max_rows = n_rows - 3
+var n_rows = 11
+var max_rows = n_rows - 4
 var n_cols = 8
 var elements = {}
-var element_spacing = 64.0
-var fadeout_time = 0.2
-var fall_time = 0.2
-var move_time = 0.2
-var spawn_time = 0.2
+var element_spacing = 100.0
+var fadeout_time = 1.15
+var fall_time = 1.2
+var move_time = 1.2
+var spawn_time = 1.15
 
 var pending_start_row = 0
 var pending_start_col = 3
@@ -44,14 +45,14 @@ func _input(event):
 				await fall()
 				var cc = find_all_connected_components(elements)
 				while cc.size() > 0:
-					var c = cc[0]
-					var spawn_position = find_lowest_then_leftmost(c)
-					var element_value = elements[[c[0][0], c[0][1]]].element_value
-					await delete_elements(c)
-					await spawn_element_at_row_col(spawn_position[0], spawn_position[1], true, element_value+1)
-					fall()
+					for c in cc:
+						var spawn_position = find_lowest_then_leftmost(c)
+						var element_value = elements[[c[0][0], c[0][1]]].element_value
+						await delete_elements(c)
+						await spawn_element_at_row_col(spawn_position[0], spawn_position[1], true, element_value+1)
+						await fall()
 					cc = find_all_connected_components(elements)
-				spawn_pending()
+				await spawn_pending()
 					
 
 
@@ -62,7 +63,7 @@ func row_to_y(row):
 	return marker.global_position.y + element_spacing * row 
 
 func col_to_x(col):
-	return element_spacing * (col - n_cols/2.0) 
+	return element_spacing * (col - n_cols/2.0) - element_spacing / 2.0
 
 func find_lowest_then_leftmost(rc_array):
 	var max_row = -1
@@ -104,7 +105,7 @@ func spawn_elements_on_grid(wait):
 			if row < max_rows:
 				elements[[row, col]] = null
 			else:
-				elements[[row, col]] = await spawn_element_at_position(Vector2(x, y), wait, (col + row)%7)
+				elements[[row, col]] = await spawn_element_at_position(Vector2(x, y), wait, (col + row)%4)
 
 func spawn_element_at_position(position: Vector2, wait, element_value):
 	var element_instance = element_scene.instantiate()
@@ -124,6 +125,12 @@ func delete_element(row, col) -> void:
 	if elements[[row, col]]:
 		var tween = create_tween()
 		tween.tween_property(elements[[row, col]], "modulate:a", 0.0, fadeout_time)
+		
+		
+		var particles = particle_scene.instantiate()
+		elements[[row, col]].add_child(particles)
+		particles.position += Vector2(element_spacing, element_spacing)
+		
 		tween.tween_callback(func():
 			elements[[row, col]].queue_free()
 			elements[[row, col]] = null

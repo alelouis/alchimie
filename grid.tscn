@@ -8,4 +8,4 @@ script = ExtResource("1_t2hmf")
 [node name="Camera2D" type="Camera2D" parent="."]
 
 [node name="GridBottom" type="Marker2D" parent="."]
-position = Vector2(-2, -379)
+position = Vector2(-2, -602)

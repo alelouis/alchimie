@@ -1,8 +1,8 @@
 extends Sprite2D
 
 # Set these values in the Inspector or via code
-@export var sprite_columns = 8  # Number of columns in your sprite sheet
-@export var sprite_rows = 8     # Number of rows in your sprite sheet
+@export var sprite_columns = 4  # Number of columns in your sprite sheet
+@export var sprite_rows = 4     # Number of rows in your sprite sheet
 
 func _ready():
 	# Setup the sprite sheet
