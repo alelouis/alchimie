@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://d3srcdf1lkwhq"]
+
+[ext_resource type="Script" path="res://grid.gd" id="1_t2hmf"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_t2hmf")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="GridBottom" type="Marker2D" parent="."]
+position = Vector2(-2, -379)

@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=3 uid="uid://cgm4vl6x2d727"]
+
+[ext_resource type="Texture2D" uid="uid://dekeef5wg662m" path="res://assets/spritemap.png" id="1_1xbrb"]
+[ext_resource type="Script" path="res://element.gd" id="1_fteyo"]
+[ext_resource type="Script" path="res://element_sprite.gd" id="2_x5oyj"]
+
+[node name="Element" type="Node2D"]
+script = ExtResource("1_fteyo")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_1xbrb")
+centered = false
+script = ExtResource("2_x5oyj")
