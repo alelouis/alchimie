@@ -4,17 +4,22 @@ extends Node2D
 @onready var element_scene = preload("res://element.tscn")
 @onready var particle_scene = preload("res://ParticleEffect.tscn")
 
+signal elementGained
+
 var can_input = true
+var can_space = true
+
+var rng = RandomNumberGenerator.new()
 
 var n_rows = 11
-var max_rows = n_rows - 4
+var max_rows = n_rows - 3
 var n_cols = 8
 var elements = {}
 var element_spacing = 100.0
-var fadeout_time = 0.2
+var fadeout_time = 0.1
 var fall_time = 0.2
 var move_time = 0.2
-var spawn_time = 0.15
+var spawn_time = 0.1
 
 var pending_start_row = 0
 var pending_start_col = 3
@@ -50,19 +55,22 @@ func _input(event):
 				move_pending('right')
 				can_input = true
 			KEY_SPACE:
-				can_input = false
-				await fall(true)
-				await spawn_pending()
-				can_input = true
-				var cc = find_all_connected_components(elements)
-				while cc.size() > 0:
-					for c in cc:
-						var spawn_position = find_lowest_then_leftmost(c)
-						var element_value = elements[[c[0][0], c[0][1]]].element_value
-						await delete_elements(c)
-						await spawn_element_at_row_col(spawn_position[0], spawn_position[1], true, element_value+1)
-						await fall(false)
-					cc = find_all_connected_components(elements)
+				if can_space:
+					can_input = false
+					can_space = false
+					await fall(true)
+					await spawn_pending()
+					can_input = true
+					var cc = find_all_connected_components(elements)
+					while cc.size() > 0:
+						for c in cc:
+							var spawn_position = find_lowest_then_leftmost(c)
+							var element_value = elements[[c[0][0], c[0][1]]].element_value
+							await delete_elements(c)
+							await spawn_element_at_row_col(spawn_position[0], spawn_position[1], true, element_value+1)
+							await fall(false)
+						cc = find_all_connected_components(elements)
+					can_space = true
 
 
 # Utility
@@ -98,8 +106,8 @@ func spawn_pending():
 	pending_one_col = pending_start_col
 	pending_two_row = pending_start_row
 	pending_two_col = pending_start_col + 1
-	spawn_element_at_row_col(pending_one_row, pending_one_col, false, 0)
-	spawn_element_at_row_col(pending_two_row, pending_two_col, false, 0)
+	spawn_element_at_row_col(pending_one_row, pending_one_col, false, rng.randi_range(0, 3))
+	spawn_element_at_row_col(pending_two_row, pending_two_col, false, rng.randi_range(0, 3))
 
 func spawn_element_at_row_col(row, col, wait, element_value):
 	var x = col_to_x(col)
@@ -135,12 +143,16 @@ func spawn_element_at_position(position: Vector2, wait, element_value):
 func delete_element(row, col) -> void:
 	if elements[[row, col]]:
 		var tween = create_tween()
-		tween.tween_property(elements[[row, col]], "modulate:a", 0.0, fadeout_time)
+		tween.tween_property(elements[[row, col]], "rotation", deg_to_rad(5), 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		tween.tween_property(elements[[row, col]], "rotation", deg_to_rad(0), 0.2).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+		tween.tween_property(elements[[row, col]], "modulate:a", 0.0, 0.1)
 		
 		
 		var particles = particle_scene.instantiate()
 		elements[[row, col]].add_child(particles)
 		particles.position += Vector2(element_spacing, element_spacing)
+		
+		emit_signal("elementGained", elements[[row, col]].element_value)
 		
 		tween.tween_callback(func():
 			elements[[row, col]].queue_free()
@@ -162,12 +174,14 @@ func move_pending(direction):
 	var old_pending_two_col = pending_two_col
 	
 	if direction == 'left':
-		pending_one_col -= 1
-		pending_two_col -= 1
+		if min(pending_one_col-1, pending_two_col-1) >= 0:
+			pending_one_col -= 1
+			pending_two_col -= 1
 		
 	if direction == 'right':
-		pending_one_col += 1
-		pending_two_col += 1
+		if max(pending_one_col+1, pending_two_col+1) < n_cols:
+			pending_one_col += 1
+			pending_two_col += 1
 	
 	# Move elements	
 	move_piece_to(old_pending_one_row, old_pending_one_col, pending_one_row, pending_one_col)

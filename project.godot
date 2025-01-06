@@ -22,4 +22,4 @@ window/size/viewport_height=1400
 
 [rendering]
 
-environment/defaults/default_clear_color=Color(0.520442, 0.732842, 0.896715, 1)
+environment/defaults/default_clear_color=Color(0.0918609, 0.217737, 0.307806, 1)
