@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://10xjgnk26ait"]
+
+[ext_resource type="PackedScene" uid="uid://d3srcdf1lkwhq" path="res://grid.tscn" id="1_rx4rl"]
+[ext_resource type="PackedScene" uid="uid://b3271yvt6yolv" path="res://sidebar.tscn" id="2_fagxj"]
+
+[node name="Game" type="Node"]
+
+[node name="Node2D" parent="." instance=ExtResource("1_rx4rl")]
+
+[node name="Sidebar" parent="." instance=ExtResource("2_fagxj")]
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+grow_horizontal = 1
+grow_vertical = 1
+size_flags_horizontal = 0
+size_flags_vertical = 0

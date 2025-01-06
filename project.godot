@@ -11,14 +11,15 @@ config_version=5
 [application]
 
 config/name="alchimie"
-run/main_scene="res://grid.tscn"
+run/main_scene="res://game.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
 
 [display]
 
+window/size/viewport_width=1400
 window/size/viewport_height=1400
 
 [rendering]
 
-environment/defaults/default_clear_color=Color(0.0545433, 0.0921658, 0.13191, 1)
+environment/defaults/default_clear_color=Color(0.520442, 0.732842, 0.896715, 1)

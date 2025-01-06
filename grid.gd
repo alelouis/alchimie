@@ -4,15 +4,17 @@ extends Node2D
 @onready var element_scene = preload("res://element.tscn")
 @onready var particle_scene = preload("res://ParticleEffect.tscn")
 
+var can_input = true
+
 var n_rows = 11
 var max_rows = n_rows - 4
 var n_cols = 8
 var elements = {}
 var element_spacing = 100.0
-var fadeout_time = 1.15
-var fall_time = 1.2
-var move_time = 1.2
-var spawn_time = 1.15
+var fadeout_time = 0.2
+var fall_time = 0.2
+var move_time = 0.2
+var spawn_time = 0.15
 
 var pending_start_row = 0
 var pending_start_col = 3
@@ -33,16 +35,25 @@ func _process(delta: float) -> void:
 
 func _input(event):
 	# Check if the event is a key press
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey and event.pressed and can_input:
 		match event.keycode:
 			KEY_R:
+				can_input = false
 				rotate_pending()
+				can_input = true
 			KEY_J:
+				can_input = false
 				move_pending('left')
+				can_input = true
 			KEY_L:
+				can_input = false
 				move_pending('right')
+				can_input = true
 			KEY_SPACE:
-				await fall()
+				can_input = false
+				await fall(true)
+				await spawn_pending()
+				can_input = true
 				var cc = find_all_connected_components(elements)
 				while cc.size() > 0:
 					for c in cc:
@@ -50,20 +61,19 @@ func _input(event):
 						var element_value = elements[[c[0][0], c[0][1]]].element_value
 						await delete_elements(c)
 						await spawn_element_at_row_col(spawn_position[0], spawn_position[1], true, element_value+1)
-						await fall()
+						await fall(false)
 					cc = find_all_connected_components(elements)
-				await spawn_pending()
-					
 
 
 # Utility
 	
 func row_to_y(row):
 	var marker = get_node("GridBottom")
-	return marker.global_position.y + element_spacing * row 
+	return marker.position.y + element_spacing * row 
 
 func col_to_x(col):
-	return element_spacing * (col - n_cols/2.0) - element_spacing / 2.0
+	var marker = get_node("GridBottom")
+	return marker.position.x + element_spacing * (col - n_cols/2.0) - element_spacing / 2.0
 
 func find_lowest_then_leftmost(rc_array):
 	var max_row = -1
@@ -112,6 +122,7 @@ func spawn_element_at_position(position: Vector2, wait, element_value):
 	element_instance.position = position
 	element_instance.modulate.a = 0
 	element_instance.element_value = element_value
+	element_instance.z_index = sqrt(position.x**2 + position.y**2)
 	add_child(element_instance)
 	var tween = create_tween()
 	tween.tween_property(element_instance, "modulate:a", 1.0, spawn_time)
@@ -210,7 +221,7 @@ func move_piece_to(from_row, from_col, to_row, to_col):
 	var y = row_to_y(to_row)
 	tween.tween_property(elements[[from_row, from_col]], "position", Vector2(x, y), move_time).set_trans(Tween.TRANS_CIRC).set_ease(Tween.EASE_OUT)
 
-func fall():
+func fall(spawn):
 	var falling = {}
 	for k in elements.keys():
 		var row = k[0]
@@ -223,6 +234,10 @@ func fall():
 					else:
 						falling[[row, col]] = [1, elements[[row, col]]]
 	
+	if not spawn:
+		falling.erase([pending_one_row, pending_one_col])
+		falling.erase([pending_two_row, pending_two_col])
+		
 	var fall_count = 0
 	for f in falling.keys():
 		fall_count += 1
@@ -232,18 +247,24 @@ func fall():
 		var tween = create_tween()
 		var x = col_to_x(col)
 		var y = row_to_y(target_row)
-		tween.tween_property(elements[[row, col]], "position", Vector2(x, y), fall_time).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.tween_property(elements[[row, col]], "position", Vector2(x, y), fall_time).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+		elements[[row, col]].z_index = sqrt(x**2 + y**2)
 		if fall_count == falling.size():
 			await tween.finished
 	
-	# Referencing back to new position
+	# Deleting old positions
+	for f in falling.keys():
+		var row = f[0]
+		var col = f[1]
+		elements[[row, col]] = null
+	
+	# Filling new positions
 	for f in falling.keys():
 		var row = f[0]
 		var col = f[1]
 		var target_row = row + falling[f][0]
-		elements[[row, col]] = null
 		elements[[target_row, col]] = falling[f][1]
-		
+	
 	return falling
 
 # Logic
