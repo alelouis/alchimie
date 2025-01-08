@@ -9,7 +9,6 @@ var elements = {}
 func _ready() -> void:
 	add_elements()
 
-
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
@@ -19,8 +18,6 @@ func change_label(element_value, element_count):
 	var tween = create_tween()
 	tween.tween_property(elements[element_value], "rotation", deg_to_rad(10), 0.15).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	tween.tween_property(elements[element_value], "rotation", deg_to_rad(0), 0.5).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-	
-	
 
 func add_elements():
 	var panels = []

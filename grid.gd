@@ -3,6 +3,8 @@ extends Node2D
 # Preload the scene or texture you want to spawn
 @onready var element_scene = preload("res://element.tscn")
 @onready var particle_scene = preload("res://ParticleEffect.tscn")
+@onready var fall_sound = $FallPlayer
+@onready var gain_sound = $GainPlayer
 
 signal elementGained
 
@@ -13,7 +15,7 @@ var rng = RandomNumberGenerator.new()
 
 var n_rows = 11
 var max_rows = n_rows - 3
-var n_cols = 8
+var n_cols = 6
 var elements = {}
 var element_spacing = 100.0
 var fadeout_time = 0.1
@@ -22,7 +24,7 @@ var move_time = 0.2
 var spawn_time = 0.1
 
 var pending_start_row = 0
-var pending_start_col = 3
+var pending_start_col = 2
 
 # Current pending positions
 var pending_one_row = null
@@ -32,11 +34,25 @@ var pending_two_col = null
 var pending_rotation = 0
 
 func _ready() -> void:
+	var sfx_fall = load("res://assets/sfx_fall.wav")
+	var sfx_delete = load("res://assets/sfx_delete.wav")
+	fall_sound.stream = sfx_fall
+	gain_sound.stream = sfx_delete
+	
 	spawn_elements_on_grid(false)
+	await fall(false)
 	spawn_pending()
 
 func _process(delta: float) -> void:
 	pass
+	
+func reset():
+	await delete_elements(elements.keys(), false)
+	await get_tree().create_timer(0.5).timeout
+	spawn_elements_on_grid(false)
+	await fall(false)
+	spawn_pending()
+	
 
 func _input(event):
 	# Check if the event is a key press
@@ -56,19 +72,26 @@ func _input(event):
 				can_input = true
 			KEY_SPACE:
 				if can_space:
+					var gain_loops = 0
 					can_input = false
 					can_space = false
 					await fall(true)
 					await spawn_pending()
+					fall_sound.play()
 					can_input = true
 					var cc = find_all_connected_components(elements)
 					while cc.size() > 0:
 						for c in cc:
+							gain_loops += 1
+							gain_sound.pitch_scale = 1.0 + gain_loops / 12.0
 							var spawn_position = find_lowest_then_leftmost(c)
 							var element_value = elements[[c[0][0], c[0][1]]].element_value
-							await delete_elements(c)
+							gain_sound.play()
+							await delete_elements(c, true)
 							await spawn_element_at_row_col(spawn_position[0], spawn_position[1], true, element_value+1)
+							fall_sound.play()
 							await fall(false)
+							
 						cc = find_all_connected_components(elements)
 					can_space = true
 
@@ -106,8 +129,8 @@ func spawn_pending():
 	pending_one_col = pending_start_col
 	pending_two_row = pending_start_row
 	pending_two_col = pending_start_col + 1
-	spawn_element_at_row_col(pending_one_row, pending_one_col, false, rng.randi_range(0, 3))
-	spawn_element_at_row_col(pending_two_row, pending_two_col, false, rng.randi_range(0, 3))
+	spawn_element_at_row_col(pending_one_row, pending_one_col, false, rng.randi_range(0, 1))
+	spawn_element_at_row_col(pending_two_row, pending_two_col, false, rng.randi_range(0, 1))
 
 func spawn_element_at_row_col(row, col, wait, element_value):
 	var x = col_to_x(col)
@@ -123,7 +146,10 @@ func spawn_elements_on_grid(wait):
 			if row < max_rows:
 				elements[[row, col]] = null
 			else:
-				elements[[row, col]] = await spawn_element_at_position(Vector2(x, y), wait, (col + row)%4)
+				if rng.randi_range(0, 1) == 0:
+					elements[[row, col]] = await spawn_element_at_position(Vector2(x, y), wait, rng.randi_range(0, 1))
+				else:
+					elements[[row, col]] = null
 
 func spawn_element_at_position(position: Vector2, wait, element_value):
 	var element_instance = element_scene.instantiate()
@@ -140,8 +166,8 @@ func spawn_element_at_position(position: Vector2, wait, element_value):
 
 # Deletion
 
-func delete_element(row, col) -> void:
-	if elements[[row, col]]:
+func delete_element(row, col, count) -> void:
+	if elements[[row, col]] != null:
 		var tween = create_tween()
 		tween.tween_property(elements[[row, col]], "rotation", deg_to_rad(5), 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 		tween.tween_property(elements[[row, col]], "rotation", deg_to_rad(0), 0.2).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
@@ -152,7 +178,8 @@ func delete_element(row, col) -> void:
 		elements[[row, col]].add_child(particles)
 		particles.position += Vector2(element_spacing, element_spacing)
 		
-		emit_signal("elementGained", elements[[row, col]].element_value)
+		if count:
+			emit_signal("elementGained", elements[[row, col]].element_value)
 		
 		tween.tween_callback(func():
 			elements[[row, col]].queue_free()
@@ -160,10 +187,10 @@ func delete_element(row, col) -> void:
 		)
 		await tween.finished
 
-func delete_elements(rc_array) -> void:
+func delete_elements(rc_array, count) -> void:
 	for i in range(rc_array.size() - 1):
-		delete_element(rc_array[i][0], rc_array[i][1])
-	await delete_element(rc_array[-1][0], rc_array[-1][1])
+		delete_element(rc_array[i][0], rc_array[i][1], count)
+	await delete_element(rc_array[-1][0], rc_array[-1][1], count)
 
 # Movement
 

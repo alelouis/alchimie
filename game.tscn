@@ -1,9 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://10xjgnk26ait"]
+[gd_scene load_steps=10 format=3 uid="uid://10xjgnk26ait"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_0gn1v"]
 [ext_resource type="PackedScene" uid="uid://d3srcdf1lkwhq" path="res://grid.tscn" id="1_rx4rl"]
 [ext_resource type="PackedScene" uid="uid://b3271yvt6yolv" path="res://sidebar.tscn" id="2_fagxj"]
 [ext_resource type="Texture2D" uid="uid://5vnvgqlh0bxk" path="res://assets/bg4.png" id="2_qctr4"]
+[ext_resource type="AudioStream" uid="uid://krqbhixauvv6" path="res://assets/alchimie2.wav" id="5_qqsya"]
+[ext_resource type="Texture2D" uid="uid://vsk2fqtdkfqf" path="res://assets/icons/music-alt.png" id="6_plwje"]
+[ext_resource type="Texture2D" uid="uid://b1xfaopavroha" path="res://assets/icons/volume-mute.png" id="7_murbs"]
+[ext_resource type="Texture2D" uid="uid://ru4gel623yxj" path="res://assets/icons/rotate-right.png" id="8_5bruk"]
+[ext_resource type="Texture2D" uid="uid://bxeo4pctc02i1" path="res://assets/icons/menu-burger.png" id="9_24wli"]
 
 [node name="Game" type="Node"]
 script = ExtResource("1_0gn1v")
@@ -28,4 +33,43 @@ grow_vertical = 1
 size_flags_horizontal = 0
 size_flags_vertical = 0
 
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5_qqsya")
+volume_db = -3.525
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -276.0
+offset_bottom = 128.0
+grow_horizontal = 0
+scale = Vector2(0.6, 0.6)
+pivot_offset = Vector2(672, 0)
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="music" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+texture = ExtResource("6_plwje")
+
+[node name="mute" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+texture = ExtResource("7_murbs")
+
+[node name="restart" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+texture = ExtResource("8_5bruk")
+
+[node name="menu" type="TextureRect" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+texture = ExtResource("9_24wli")
+
 [connection signal="elementGained" from="Node2D" to="." method="_on_node_2d_element_gained"]
+[connection signal="gui_input" from="MarginContainer/HBoxContainer/music" to="." method="_on_music_gui_input"]
+[connection signal="gui_input" from="MarginContainer/HBoxContainer/mute" to="." method="_on_mute_gui_input"]
+[connection signal="gui_input" from="MarginContainer/HBoxContainer/restart" to="." method="_on_restart_gui_input"]

@@ -10,3 +10,7 @@ script = ExtResource("1_t2hmf")
 
 [node name="GridBottom" type="Marker2D" parent="."]
 position = Vector2(177, -563)
+
+[node name="FallPlayer" type="AudioStreamPlayer" parent="."]
+
+[node name="GainPlayer" type="AudioStreamPlayer" parent="."]
